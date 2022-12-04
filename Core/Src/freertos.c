@@ -47,9 +47,10 @@
 
 /* Private variables ---------------------------------------------------------*/
 /* USER CODE BEGIN Variables */
-uint8_t rx_buffer[RX_BUFFER_LENGTH];
+uint8_t rx_buffer[2];
 uint8_t new_message_flag = 0;
 extern UART_HandleTypeDef huart3;
+uint8_t local_buffer[RX_BUFFER_LENGTH];
 
 /* USER CODE END Variables */
 /* Definitions for Listener */
@@ -130,7 +131,6 @@ void MX_FREERTOS_Init(void) {
 void StartListener(void *argument)
 {
   /* USER CODE BEGIN StartListener */
-	char local_buffer[RX_BUFFER_LENGTH];
 	uint8_t local_pointer = 0;
 	/* Infinite loop */
   for(;;)
@@ -140,6 +140,8 @@ void StartListener(void *argument)
 		 local_buffer[local_pointer] = rx_buffer[0];
 		 if(local_buffer[local_pointer] == '\n' || local_buffer[local_pointer] == '\r'){
 			 new_message_flag = 1;
+			 memset(local_buffer,0,RX_BUFFER_LENGTH);
+			 local_pointer = 0;
 		 }else{
 			 local_pointer++;
 			 if(local_pointer > RX_BUFFER_LENGTH){
@@ -149,6 +151,7 @@ void StartListener(void *argument)
 	 }
     osDelay(100);
   }
+  osThreadDetach(ListenerHandle);
   /* USER CODE END StartListener */
 }
 
