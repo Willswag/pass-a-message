@@ -48,6 +48,7 @@
 /* Private variables ---------------------------------------------------------*/
 /* USER CODE BEGIN Variables */
 uint8_t rx_buffer[RX_BUFFER_LENGTH];
+uint8_t new_message_flag = 0;
 extern UART_HandleTypeDef huart3;
 
 /* USER CODE END Variables */
@@ -138,7 +139,7 @@ void StartListener(void *argument)
 	 if(ret == HAL_OK){
 		 local_buffer[local_pointer] = rx_buffer[0];
 		 if(local_buffer[local_pointer] == '\n' || local_buffer[local_pointer] == '\r'){
-
+			 new_message_flag = 1;
 		 }else{
 			 local_pointer++;
 			 if(local_pointer > RX_BUFFER_LENGTH){
