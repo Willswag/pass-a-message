@@ -37,7 +37,7 @@
 
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
-
+#define RX_BUFFER_LENGTH 100
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
@@ -47,6 +47,10 @@
 
 /* Private variables ---------------------------------------------------------*/
 /* USER CODE BEGIN Variables */
+uint8_t rx_buffer[2];
+uint8_t new_message_flag = 0;
+extern UART_HandleTypeDef huart3;
+uint8_t local_buffer[RX_BUFFER_LENGTH];
 
 /* USER CODE END Variables */
 /* Definitions for Listener */
@@ -69,8 +73,8 @@ const osThreadAttr_t Speaker_attributes = {
 
 /* USER CODE END FunctionPrototypes */
 
-void StartDefaultTask(void *argument);
-void StartTask02(void *argument);
+void StartListener(void *argument);
+void StartSpeaker(void *argument);
 
 void MX_FREERTOS_Init(void); /* (MISRA C 2004 rule 8.1) */
 
@@ -102,10 +106,10 @@ void MX_FREERTOS_Init(void) {
 
   /* Create the thread(s) */
   /* creation of Listener */
-  ListenerHandle = osThreadNew(StartDefaultTask, NULL, &Listener_attributes);
+  ListenerHandle = osThreadNew(StartListener, NULL, &Listener_attributes);
 
   /* creation of Speaker */
-  SpeakerHandle = osThreadNew(StartTask02, NULL, &Speaker_attributes);
+  SpeakerHandle = osThreadNew(StartSpeaker, NULL, &Speaker_attributes);
 
   /* USER CODE BEGIN RTOS_THREADS */
   /* add threads, ... */
@@ -117,40 +121,56 @@ void MX_FREERTOS_Init(void) {
 
 }
 
-/* USER CODE BEGIN Header_StartDefaultTask */
+/* USER CODE BEGIN Header_StartListener */
 /**
   * @brief  Function implementing the Listener thread.
   * @param  argument: Not used
   * @retval None
   */
-/* USER CODE END Header_StartDefaultTask */
-void StartDefaultTask(void *argument)
+/* USER CODE END Header_StartListener */
+void StartListener(void *argument)
 {
-  /* USER CODE BEGIN StartDefaultTask */
-  /* Infinite loop */
+  /* USER CODE BEGIN StartListener */
+	uint8_t local_pointer = 0;
+	/* Infinite loop */
   for(;;)
   {
-    osDelay(1);
+	 HAL_StatusTypeDef ret = HAL_UART_Receive(&huart3,rx_buffer ,1, 100);
+	 if(ret == HAL_OK){
+		 local_buffer[local_pointer] = rx_buffer[0];
+		 if(local_buffer[local_pointer] == '\n' || local_buffer[local_pointer] == '\r'){
+			 new_message_flag = 1;
+			 memset(local_buffer,0,RX_BUFFER_LENGTH);
+			 local_pointer = 0;
+		 }else{
+			 local_pointer++;
+			 if(local_pointer > RX_BUFFER_LENGTH){
+				 local_pointer = 0;
+			 }
+		 }
+	 }
+    osDelay(100);
   }
-  /* USER CODE END StartDefaultTask */
+  osThreadDetach(ListenerHandle);
+  /* USER CODE END StartListener */
 }
 
-/* USER CODE BEGIN Header_StartTask02 */
+/* USER CODE BEGIN Header_StartSpeaker */
 /**
 * @brief Function implementing the Speaker thread.
 * @param argument: Not used
 * @retval None
 */
-/* USER CODE END Header_StartTask02 */
-void StartTask02(void *argument)
+/* USER CODE END Header_StartSpeaker */
+void StartSpeaker(void *argument)
 {
-  /* USER CODE BEGIN StartTask02 */
+  /* USER CODE BEGIN StartSpeaker */
   /* Infinite loop */
   for(;;)
   {
     osDelay(1);
   }
-  /* USER CODE END StartTask02 */
+  /* USER CODE END StartSpeaker */
 }
 
 /* Private application code --------------------------------------------------*/
