@@ -49,6 +49,7 @@
 /* USER CODE BEGIN Variables */
 uint8_t rx_buffer[2];
 uint8_t new_message_flag = 0;
+uint8_t message_length;
 extern UART_HandleTypeDef huart3;
 uint8_t local_buffer[RX_BUFFER_LENGTH];
 
@@ -140,7 +141,8 @@ void StartListener(void *argument)
 		 local_buffer[local_pointer] = rx_buffer[0];
 		 if(local_buffer[local_pointer] == '\n' || local_buffer[local_pointer] == '\r'){
 			 new_message_flag = 1;
-			 memset(local_buffer,0,RX_BUFFER_LENGTH);
+			 local_buffer[local_pointer+1 ] = '\n';
+			 message_length = local_pointer;
 			 local_pointer = 0;
 		 }else{
 			 local_pointer++;
@@ -168,7 +170,14 @@ void StartSpeaker(void *argument)
   /* Infinite loop */
   for(;;)
   {
-    osDelay(1);
+	  if (new_message_flag) {
+		  HAL_UART_Transmit(&huart3, local_buffer, message_length, 100);
+			 memset(local_buffer,0,RX_BUFFER_LENGTH);
+
+		  new_message_flag = 0;
+	}
+	  osDelay(250);
+
   }
   /* USER CODE END StartSpeaker */
 }
